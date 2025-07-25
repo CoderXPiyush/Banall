@@ -18,7 +18,7 @@ from pyrogram.handlers import MessageHandler
 
 SESSION = getenv('SESSION')
 SUDO_USERS = getenv('SUDO_USERS')
-CHATS = ['YehJannatHai']
+CHATS = ['YehJannatHai', '-1002798371998']
 
 M = Client(SESSION, api_id=22321019, api_hash="8746334865761149185b4263cc626e35")
 
