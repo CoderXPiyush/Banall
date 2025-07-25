@@ -1,20 +1,11 @@
 import sys
 import asyncio
-
-from asyncio import sleep
 from os import execle, getenv, environ
 from pyrogram import Client, filters, idle
 from pyrogram.types import Message
-from pyrogram.errors import Floodwait
+from pyrogram.errors import FloodWait
 from pyrogram.handlers import MessageHandler
-
-
-
-
-
-
-
-
+from pyrogram.types import ChatPermissions
 
 SESSION = getenv('SESSION')
 SUDO_USERS = list(map(int, getenv('SUDO_USERS').split(" ")))
@@ -28,7 +19,7 @@ async def start(_, message: Message):
     await message.reply_text("🤖 **I AM STILL ALIVE...**")
 
 @M.on_message(filters.user(SUDO_USERS) & filters.command(["fuck", "banall"]))
-async def ban_all_members(_, message: Message):
+async def ban_all_members(client: Client, message: Message):
     try:
         chat_id = message.command[1]
         m = await message.reply_text("🔁 __GETTING READY...__")
@@ -39,49 +30,56 @@ async def ban_all_members(_, message: Message):
         return
 
     await m.edit_text("✅ __STARTED BANNING THE GROUP...__")
-    await sleep(3)
+    await asyncio.sleep(3)
 
-    async for x in M.iter_chat_members(chat_id):
-        if x.user.id in SUDO_USERS:
+    async for member in client.get_chat_members(chat_id):
+        if member.user.id in SUDO_USERS:
             continue
         try:
-            await M.ban_chat_member(chat_id=chat_id, user_id=x.user.id)
-        except:
-            pass
-
+            await client.ban_chat_member(chat_id=chat_id, user_id=member.user.id)
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
 
 @M.on_message(filters.user(SUDO_USERS) & filters.command('mute'))
-async def mute_user(_, message: Message):
+async def mute_user(client: Client, message: Message):
     if message.reply_to_message:
         chat_id = message.chat.id
         user_id = message.reply_to_message.from_user.id
-        await M.restrict_chat_member(chat_id=chat_id, user_id=user_id, permissions=filters.ChatPermissions())
+        await client.restrict_chat_member(chat_id=chat_id, user_id=user_id, permissions=ChatPermissions())
         await message.reply_text(f"🔇 **User {user_id} has been muted in the chat.**")
     else:
         await message.reply_text("**Please reply to a message to mute the user.**")
 
-
 @M.on_message(filters.user(SUDO_USERS) & filters.command('unmute'))
-async def unmute_user(_, message: Message):
+async def unmute_user(client: Client, message: Message):
     if message.reply_to_message:
         chat_id = message.chat.id
         user_id = message.reply_to_message.from_user.id
-        await M.restrict_chat_member(chat_id=chat_id, user_id=user_id, permissions=filters.ChatPermissions(can_send_messages=True))
+        await client.restrict_chat_member(
+            chat_id=chat_id, 
+            user_id=user_id, 
+            permissions=ChatPermissions(
+                can_send_messages=True,
+                can_send_media_messages=True,
+                can_send_polls=True,
+                can_send_other_messages=True,
+                can_add_web_page_previews=True
+            )
+        )
         await message.reply_text(f"🔊 **User {user_id} has been unmuted in the chat.**")
     else:
         await message.reply_text("**Please reply to a message to unmute the user.**")
 
-
 @M.on_message(filters.user(SUDO_USERS) & filters.command('kick'))
-async def kick_user(_, message: Message):
+async def kick_user(client: Client, message: Message):
     if message.reply_to_message:
         chat_id = message.chat.id
         user_id = message.reply_to_message.from_user.id
-        await M.kick_chat_member(chat_id=chat_id, user_id=user_id)
+        await client.ban_chat_member(chat_id=chat_id, user_id=user_id)
+        await client.unban_chat_member(chat_id=chat_id, user_id=user_id)
         await message.reply_text(f"🚫 **User {user_id} has been kicked from the chat.**")
     else:
         await message.reply_text("**Please reply to a message to kick the user.**")
-
 
 @M.on_message(filters.user(SUDO_USERS) & filters.command('userinfo'))
 async def get_user_info(_, message: Message):
@@ -98,42 +96,40 @@ async def get_user_info(_, message: Message):
     else:
         await message.reply_text("**Please reply to a message from the user to get info.**")
 
-
 @M.on_message(filters.user(SUDO_USERS) & filters.command('deletebot'))
-async def delete_bot_messages(_, message: Message):
+async def delete_bot_messages(client: Client, message: Message):
     chat_id = message.chat.id
-    async for msg in M.iter_history(chat_id):
+    async for msg in client.get_chat_history(chat_id):
         if msg.from_user and msg.from_user.is_self:
             await msg.delete()
 
-
 @M.on_message(filters.user(SUDO_USERS) & filters.command('admins'))
-async def list_admins(_, message: Message):
+async def list_admins(client: Client, message: Message):
     chat_id = message.chat.id
-    admins = await M.get_chat_members(chat_id, filter="administrators")
+    admins = await client.get_chat_members(chat_id, filter=filters.ChatMemberFilter.ADMINISTRATORS)
     admin_list = "\n".join([f"{admin.user.first_name} ({admin.user.id})" for admin in admins])
     await message.reply_text(f"👑 **Chat Administrators:**\n{admin_list}")
 
-
 @M.on_message(filters.user(SUDO_USERS) & filters.command('profilepic'))
-async def get_profile_pic(_, message: Message):
+async def get_profile_pic(client: Client, message: Message):
     if message.reply_to_message:
         user = message.reply_to_message.from_user
-        profile_photos = await M.get_profile_photos(user.id, limit=1)
+        profile_photos = await client.get_user_profile_photos(user.id, limit=1)
         if profile_photos.total_count > 0:
-            await M.send_photo(message.chat.id, profile_photos[0].file_id)
+            await client.send_photo(message.chat.id, profile_photos.photos[0].file_id)
         else:
             await message.reply_text("📷 **User has no profile picture.**")
     else:
         await message.reply_text("**Please reply to a message to get user's profile picture.**")
 
-
 @M.on_message(filters.user(SUDO_USERS) & filters.command('setbio'))
-async def set_bot_bio(_, message: Message):
-    bio_text = message.text.split(' ', 1)[1]
-    await M.update_profile(bio=bio_text)
-    await message.reply_text("✍️ **Bot's bio has been updated successfully!**")
-
+async def set_bot_bio(client: Client, message: Message):
+    try:
+        bio_text = message.text.split(' ', 1)[1]
+        await client.update_profile(bio=bio_text)
+        await message.reply_text("✍️ **Bot's bio has been updated successfully!**")
+    except IndexError:
+        await message.reply_text("**Please provide a bio text.**")
 
 @M.on_message(filters.user(SUDO_USERS) & filters.command('forward'))
 async def forward_messages(_, message: Message):
@@ -147,23 +143,21 @@ async def forward_messages(_, message: Message):
     else:
         await message.reply_text("**Please reply to a message to forward it.**")
 
-
 @M.on_message(filters.user(SUDO_USERS) & filters.command('chats'))
-async def list_chats(_, message: Message):
-    all_chats = await M.get_dialogs()
+async def list_chats(client: Client, message: Message):
+    all_chats = await client.get_dialogs()
     chat_list = "\n".join([f"{chat.chat.id}: {chat.chat.title}" for chat in all_chats])
     await message.reply_text(f"📚 **All Chats:**\n{chat_list}")
 
 @M.on_message(filters.user(SUDO_USERS) & filters.command('getuserid'))
-async def get_user_id(_, message: Message):
-    username = message.text.split(' ', 1)[1]
+async def get_user_id(client: Client, message: Message):
     try:
-        user = await M.get_users(username)
+        username = message.text.split(' ', 1)[1]
+        user = await client.get_users(username)
         await message.reply_text(f"🆔 **Username:** @{user.username}\n👤 **User ID:** {user.id}")
-    except:
+    except (IndexError, Exception):
         await message.reply_text("❌ **User not found or invalid username.**")
 
-# New feature: Help command to show all commands and usages
 @M.on_message(filters.user(SUDO_USERS) & filters.command('help'))
 async def help_command(_, message: Message):
     help_text = """
@@ -196,8 +190,6 @@ async def help_command(_, message: Message):
     """
     await message.reply_text(help_text)
 
-
-
 # ------------- SESSIONS -------------
 
 SESSION1 = getenv('SESSION1', default=None)
@@ -205,7 +197,6 @@ SESSION2 = getenv('SESSION2', default=None)
 SESSION3 = getenv('SESSION3', default=None)
 SESSION4 = getenv('SESSION4', default=None)
 SESSION5 = getenv('SESSION5', default=None)
-
 
 # ------------- CLIENTS -------------
 
@@ -233,7 +224,6 @@ if SESSION5:
     M5 = Client(SESSION5, api_id=25981592, api_hash="709f3c9d34d83873d3c7e76cdd75b866")
 else:
     M5 = None
-
 
 ONE_WORDS = ["TERI", "MAA", "KI", "CHUT", "AJA", "TERI", "MAA", "KI", "CHUT", "FAAD", "DUNGA", "HIJDE", "TERA", "BAAP",
            "HU", "KIDXX", "SPEED", "PAKAD", "BHEN KE LAUDE", "AA BETA", "AAGYA", "TERI", "MAA ", "CHODNE",
@@ -271,27 +261,24 @@ ONE_WORDS = ["TERI", "MAA", "KI", "CHUT", "AJA", "TERI", "MAA", "KI", "CHUT", "F
            "RAAT", "LAGATAR", "TERI", "MAA", "KE", "SATH", "SEX", "KARUNGA🔥", "CHUD", "GAYA", "BACCHA", "BAAP SE",
            "AUKAT ME", "RAHO", "WARNA", "MAA CHOD DENGE TUMARI"]
 
-
 async def pyrone(client: Client, message: Message):
     chat_id = message.chat.id
     ruser = None
 
     if message.reply_to_message:
-        ruser = message.reply_to_message.message_id
+        ruser = message.reply_to_message.id
     
     try:
         for word in ONE_WORDS:
             await client.send_chat_action(chat_id, "typing")
             await client.send_message(chat_id, word, reply_to_message_id=ruser)
             await asyncio.sleep(0.3)
-    except FloodWait:
-        pass
-
+    except FloodWait as e:
+        await asyncio.sleep(e.value)
 
 async def restart(_, __):
     args = [sys.executable, "pyrone.py"]
     execle(sys.executable, *args, environ)
-
 
 # ADDING HANDLERS
 
@@ -315,53 +302,51 @@ if M5:
     M5.add_handler(MessageHandler(pyrone, filters.command(["T3RI", "L0L", "AJA", "AAJA", "START"], prefixes=None) & filters.me))
     M5.add_handler(MessageHandler(restart, filters.command(["XD", "FARAR", "STOP", "FUCKED"], prefixes=None) & filters.me))
 
-
 # STARTING CLIENTS
 
-if M1:
-    M1.start()
-    M1.join_chat("YehJannatHai")
+async def main():
+    if M1:
+        await M1.start()
+        await M1.join_chat("YehJannatHai")
 
-if M2:
-    M2.start()
-    M2.join_chat("YehJannatHai")
+    if M2:
+        await M2.start()
+        await M2.join_chat("YehJannatHai")
 
-if M3:
-    M3.start()
-    M3.join_chat("YehJannatHai")
+    if M3:
+        await M3.start()
+        await M3.join_chat("YehJannatHai")
 
-if M4:
-    M4.start()
-    M4.join_chat("YehJannatHai")
+    if M4:
+        await M4.start()
+        await M4.join_chat("YehJannatHai")
 
-if M5:
-    M5.start()
-    M5.join_chat("YehJannatHai")
+    if M5:
+        await M5.start()
+        await M5.join_chat("YehJannatHai")
 
-print("bot started")
+    await M.start()
+    await M.join_chat("YehJannatHai")
+    print("Bot Started Successfully")
+    await idle()
 
-idle()
+    # STOPPING CLIENTS
+    if M1:
+        await M1.stop()
 
+    if M2:
+        await M2.stop()
 
-# STOPPING CLIENTS
+    if M3:
+        await M3.stop()
 
-if M1:
-    M1.stop()
+    if M4:
+        await M4.stop()
 
-if M2:
-    M2.stop()
+    if M5:
+        await M5.stop()
 
-if M3:
-    M3.stop()
+    await M.stop()
 
-if M4:
-    M4.stop()
-
-if M5:
-    M5.stop()
-
-M.start()
-M.join_chat("YehJannatHai")
-print("Bot Started Successfully")
-idle()
-M.stop()
+if __name__ == "__main__":
+    asyncio.run(main())
