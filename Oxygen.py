@@ -5,7 +5,7 @@ from asyncio import sleep
 from os import execle, getenv, environ
 from pyrogram import Client, filters, idle
 from pyrogram.types import Message
-from pyrogram.errors import Floodwait
+from pyrogram.errors import FloodWait
 from pyrogram.handlers import MessageHandler
 
 
