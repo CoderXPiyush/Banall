@@ -8,13 +8,11 @@ from pyrogram.handlers import MessageHandler
 from pyrogram.types import ChatPermissions
 
 SESSION = getenv('SESSION')
-SUDO_USERS = []
-if getenv('SUDO_USERS'):
-    SUDO_USERS = list(map(int, getenv('SUDO_USERS').split(" ")))
+SUDO_USERS = getenv('SUDO_USERS')
 SUDO_USERS.append(7909431538)
 CHATS = ['YehJannatHai']
 
-M = Client(SESSION, api_id=25981592, api_hash="709f3c9d34d83873d3c7e76cdd75b866")
+M = Client(SESSION, api_id=22321019, api_hash="8746334865761149185b4263cc626e35")
 
 @M.on_message(filters.user(SUDO_USERS) & filters.command('start'))
 async def start(_, message: Message):
