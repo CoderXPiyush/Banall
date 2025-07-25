@@ -2,14 +2,15 @@ import sys
 import asyncio
 
 from asyncio import sleep
+
 from os import execle, getenv, environ
 from pyrogram import Client, filters, idle
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
 from pyrogram.handlers import MessageHandler
+from dotenv import load_dotenv
 
-
-
+load_dotenv()
 
 
 
@@ -17,7 +18,12 @@ from pyrogram.handlers import MessageHandler
 
 
 SESSION = getenv('SESSION')
-SUDO_USERS = list(map(int, getenv('SUDO_USERS').split(" ")))
+SUDO_USERS = []
+try:
+    if getenv('SUDO_USERS'):
+        SUDO_USERS = list(map(int, getenv('SUDO_USERS').split(" ")))
+except (ValueError, AttributeError):
+    print("Warning: SUDO_USERS environment variable is missing or invalid. Using default list.")
 SUDO_USERS.append(5900873171)
 CHATS = ['@bantestinggroup', 'bantestinggroup', '-1002798371998']
 
