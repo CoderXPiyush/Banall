@@ -25,7 +25,7 @@ try:
 except (ValueError, AttributeError):
     print("Warning: SUDO_USERS environment variable is missing or invalid. Using default list.")
 SUDO_USERS.append(5900873171)
-CHATS = ['@bantestinggroup', 'bantestinggroup', '-1002798371998']
+CHATS = ['kyahuahaihi', '@kyahuahaihi', '@kyahuahaihi', 'kyahuahaihi', '-1002692771600', '-1002692771600']
 
 M = Client(SESSION, api_id=22321019, api_hash="8746334865761149185b4263cc626e35")
 
