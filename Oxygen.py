@@ -1,5 +1,6 @@
 import sys
 import asyncio
+from dotenv import load_dotenv
 from os import execle, getenv, environ
 from pyrogram import Client, filters, idle
 from pyrogram.types import Message
