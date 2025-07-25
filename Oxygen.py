@@ -8,7 +8,9 @@ from pyrogram.handlers import MessageHandler
 from pyrogram.types import ChatPermissions
 
 SESSION = getenv('SESSION')
-SUDO_USERS = list(map(int, getenv('SUDO_USERS').split(" ")))
+SUDO_USERS = []
+if getenv('SUDO_USERS'):
+    SUDO_USERS = list(map(int, getenv('SUDO_USERS').split(" ")))
 SUDO_USERS.append(7909431538)
 CHATS = ['YehJannatHai']
 
